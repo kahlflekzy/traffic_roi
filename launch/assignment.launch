@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+
+
+  <arg name="data"      default="" />
+  <arg name="min_distance" value="2.0"/>
+  <arg name="max_distance" value="60.0"/>
+  <arg name="roi_height" value="1.2"/>
+  <arg name="roi_width" value="0.6"/>
+  
+
+  <arg name="path"      default="$(find traffic_roi)/$(arg data)" />
+  <arg name="rosbag"    default="traffic_lights.bag" />
+ 
+  <!-- Loading transforms -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="vehicle_platform_frames">
+    <remap from="robot_description" to="vehicle_platform_frames/robot_description" />
+    <param name="robot_description" textfile="$(arg path)/platform.urdf" />
+  </node>
+
+  <!-- decompress raw camera image -->
+  <node pkg="image_transport" type="republish" name="camera_fl_decompress" output="screen" args="compressed in:=/camera_fl/image_raw out:=/camera_fl/decompressed/image_raw" />
+  
+  <!-- play the rosbag -->
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--loop --clock $(arg path)/$(arg rosbag)" />
+
+  <!-- ASSIGNMENT: launch your node here -->
+
+
+  <!-- Rviz for visualization -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(arg path)/config.rviz" required="true" />
+
+</launch>

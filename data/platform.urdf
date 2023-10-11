@@ -1,0 +1,31 @@
+<robot name="vehicle_platform">
+  <!-- Frames -->
+  <link name="base_link" />
+  <link name="imu" />
+  <link name="lidar" />
+  <link name="camera_fl" />
+
+  <!-- Sensor Transforms -->
+
+  <!-- Lidar -->
+  <joint name="lidar" type="fixed" >
+    <parent link="base_link" />
+    <child link="lidar" />
+    <origin xyz="1.02 0 1.78734" rpy="0 0 0.015" />
+  </joint>
+
+ <!-- Imu -->
+  <joint name="imu" type="fixed" >
+    <parent link="base_link" />
+    <child link="imu" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+  <!-- Camera frame -->
+  <joint name="camera_fl" type="fixed" >
+    <parent link="lidar" />
+    <child link="camera_fl" />
+    <origin xyz="1.11787 0.17502 -0.66163" rpy="-1.47631 -0.00633 -1.66711" />
+  </joint>
+
+</robot>
