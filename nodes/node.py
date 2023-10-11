@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
+from sensor_msgs.msg import Image
 from vector_map_msgs.msg import SignalArray, VectorArray, PointArray
 from math import sqrt
 
@@ -22,6 +23,9 @@ class Node:
         self.points = {}
         self.filtered_points = []
 
+        self.superimposed_img_pub = None
+
+        self.current_image = None
 
         self.set_parameters()
 
@@ -47,6 +51,7 @@ class Node:
 
     def init_publishers(self):
         """"""
+        self.superimposed_img_pub = rospy.Publisher("/camera_fl/tlr_superimpose_image", Image, queue_size=5)
         rospy.sleep(2)
     
     def init_subscribers(self):
@@ -57,6 +62,7 @@ class Node:
         self.signals_subscriber = rospy.Subscriber("/vector_map_info/signal", SignalArray, self.get_signals)
         self.vectors_subscriber = rospy.Subscriber("/vector_map_info/vector", VectorArray, self.get_vectors)
         self.points_subscriber = rospy.Subscriber("/vector_map_info/point", PointArray, self.get_points)
+        rospy.Subscriber("/camera_fl/decompressed/image_raw", Image, self.get_current_image)
         rospy.loginfo("Finished initializing subscribers.")
     
     def get_car_pose(self, data):
@@ -77,6 +83,7 @@ class Node:
             print("waiting for signals")
             rate.sleep()
         self.filter()
+        self.main_loop()
         rospy.spin()
 
     def get_signals(self, signal):
@@ -130,8 +137,13 @@ class Node:
         while not rospy.is_shutdown():
             lights = self.find_nearest_points()
             # continue from here draw roi for lights
+            rospy.loginfo("found %d lights"%len(lights))
             rate.sleep()
 
+    def get_current_image(self, image):
+        """"""
+        self.current_image = image
+        self.superimposed_img_pub.publish(self.current_image)
 
 if __name__ == "__main__":
     rospy.init_node("roi_node")
