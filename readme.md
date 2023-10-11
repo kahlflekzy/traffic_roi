@@ -42,7 +42,7 @@ docker cp config.rviz uav_lander:/root/ROS/workspace/src/traffic_roi/data/
 . devel/setup.bash 
 ```
 ```
-roslaunch traffic_roi assignment.launch path:=data
+roslaunch traffic_roi assignment.launch data:=data
 ```
 ## References
 1. [Docker cp SiteCore](https://support.sitecore.com/kb?id=kb_article_view&sysparm_article=KB0383441)

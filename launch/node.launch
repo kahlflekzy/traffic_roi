@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+
+  <arg name="data"      default="" />
+  <param name="min_distance" value="2.0"/>
+  <param name="max_distance" value="60.0"/>
+  <param name="roi_height" value="1.2"/>
+  <param name="roi_width" value="0.6"/>
+  
+
+  <arg name="path"      default="$(find traffic_roi)/$(arg data)" />
+  <arg name="rosbag"    default="traffic_lights.bag" />
+
+  <!-- ASSIGNMENT: launch your node here -->
+  <node pkg="traffic_roi" type="node.py" name="node" output="screen"/>
+
+</launch>
