@@ -1,6 +1,6 @@
 # Traffic ROI
 ## Introduction
-Requires `numpy` to be installed
+Requires `numpy` to be installed, code might also require `tf2` installed
 ```
 cd /root/ROS/
 ```
@@ -59,7 +59,8 @@ To solve this problem, the steps involved includes:
 1. Find all traffic lights. This can be achieved by 
     > i. finding all signals, \
     > ii. finding all vectors which relates signals to points \
-    > iii. finding all points and filtering points belonging to signals. This tells the location of the signals
+    > iii. finding all points and filtering points belonging to signals. This tells the location of the signals \
+    > iv. Filter points to keep only points belonging to yellow signals. This makes it such that only one point on a pole is use.
 2. Find the traffic lights whose points are within a euclidean distance of `min_distance` and `max_distance`. Use `x & y` coordinates. 
 3. For each point (traffic light) close to the car's current location:
     > I.   Transform `point` from the `map` frame to the `camera` frame \
