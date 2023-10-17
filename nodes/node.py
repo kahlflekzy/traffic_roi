@@ -19,8 +19,8 @@ class Node:
     """"""
     def __init__(self):
         """"""
-        self.loop_rate = 5 # check for traffic lights and draw ROIs in Hz
-
+        self.loop_rate = 5 # check for traffic lights and draw ROIs in how many circles per sec
+        # populated from the ROS paramaters
         self.min_distance = 0
         self.max_distance = 0
         self.roi_height = 0
@@ -39,7 +39,7 @@ class Node:
         self.marker.pose.orientation.y = 0.0;
         self.marker.pose.orientation.z = 0.0;
         self.marker.pose.orientation.w = 1.0;
-        res = 4
+        res = 4 # used to scale up visualizations of detected traffic light points in RViz.
         self.marker.scale.x = res;
         self.marker.scale.y = res;
         self.marker.scale.z = res;
@@ -90,7 +90,6 @@ class Node:
     def init_publishers(self):
         """"""
         self.superimposed_img_pub = rospy.Publisher("/camera_fl/tlr_superimpose_image", Image, queue_size=10)
-        self.camera_pub = rospy.Publisher("/camera_fl/camera_info", CameraInfo, queue_size=5)
         self.marker_pub = rospy.Publisher("/node/markers", Marker, queue_size=10)
         rospy.sleep(2)
     
@@ -98,7 +97,6 @@ class Node:
         """"""
         rospy.loginfo("Initializing subscribers.")
         rospy.Subscriber("/current_pose", PoseStamped, self.get_car_pose)
-        # consider queueing so that you don't skip some
         self.signals_subscriber = rospy.Subscriber("/vector_map_info/signal", SignalArray, self.get_signals)
         self.vectors_subscriber = rospy.Subscriber("/vector_map_info/vector", VectorArray, self.get_vectors)
         self.points_subscriber = rospy.Subscriber("/vector_map_info/point", PointArray, self.get_points)
@@ -150,7 +148,7 @@ class Node:
 
     def filter(self):
         """
-        Leave only yellow signals
+        Get the points for only yellow signals
         """
         yellows = [vid for vid, signal in self.signals.items() if signal.type == 2]
         pids = [self.vectors[vid] for vid in yellows]
@@ -159,12 +157,11 @@ class Node:
 
     def find_nearest_points(self):
         """
-        Using car pose, find the nearest traffic light from points\n
+        Using car pose, find the nearest traffic light(s) amongst points\n
         Nearest is defined as 2m <= distance between car and light <= 60m
         """
         distances = [(self.euclidean(point), point) for point in self.filtered_points]
         distances = filter(lambda i: self.min_distance <= i[0] <= self.max_distance, distances)
-        # print(distances)
         return [i[1] for i in distances]
     
     def euclidean(self, point):
@@ -177,13 +174,14 @@ class Node:
         rate = rospy.Rate(self.loop_rate)
         while not rospy.is_shutdown():
             lights = self.find_nearest_points()
-            # continue from here draw roi for lights
             # rospy.loginfo("found %d lights"%len(lights))
             self.marker.header.stamp = rospy.Time.now()
+            # delete previous Markers if any exists.
             self.marker.action = self.marker.DELETE
             for i in range(self.lights):
                 self.marker.id = i
                 self.marker_pub.publish(self.marker)
+            # Add new visualization markers.
             self.marker.action = Marker.ADD;
             self.lights = len(lights)
             for index, point in enumerate(lights):
@@ -198,7 +196,6 @@ class Node:
                     # draw ROI
                     print(coord)
                 self.marker_pub.publish(self.marker)
-
             try:
                 cv_image = self.bridge.imgmsg_to_cv2(self.current_image, desired_encoding='passthrough')
                 start_point = (5, 5)
@@ -215,7 +212,6 @@ class Node:
     def get_current_image(self, image):
         """"""
         self.current_image = image
-        # self.superimposed_img_pub.publish(self.current_image)
     
     def get_camera_params(self, data):
         """"""
@@ -223,10 +219,11 @@ class Node:
 
     def tf_listener(self):
         """
+        Get transformations between map and camera to use for transforming traffic light points (in map frame) to the camera frame.
         """
-        rospy.loginfo("Listening for map to jackal0/base_link transforms.")
+        rospy.loginfo("Listening for map to camera_fl transforms.")
         
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             try:
                 self.transform = self.tf_buffer.lookup_transform("map", "camera_fl", rospy.Time())
