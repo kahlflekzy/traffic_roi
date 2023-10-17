@@ -260,11 +260,19 @@ class Node:
             ])
         T2 = np.array(self.camera_params.R).reshape(3, 3)
         X = np.array(point).reshape(3, 1)
+        # transform
         X_ = np.matmul(T2, X)
+        # normalize
+        X_[0] /= X_[2]
+        X_[1] /= X_[2]
+        X_.reshape(1, 3)
+        # undistort
         K = np.array(self.camera_params.K).reshape(3, 3)
-        xs = np.matmul(K, X_).flatten()
-        # print(xs)
-        return xs
+        # xs = cv2.undistortPoints(X_, self.camera_params.K, self.camera_params.D)
+        # pixel coordinates
+        q = np.matmul(K, X_).flatten()
+        print(q)
+        return q
 
 
 
