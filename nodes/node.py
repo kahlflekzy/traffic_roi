@@ -7,6 +7,7 @@ import threading
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import Image, CameraInfo
+from utils import create_rotation_transformation_matrix, create_translation_matrix
 from vector_map_msgs.msg import SignalArray, VectorArray, PointArray
 from visualization_msgs.msg import Marker
 from math import sqrt
@@ -189,7 +190,9 @@ class Node:
                 output = self.transform_point(point)
                 self.marker.pose.position.x = point.ly;
                 self.marker.pose.position.y = point.bx;
-                coord = self.project(point=output)
+                # coord = self.project(point=output)
+                # coord = self.project2(point=self.point_to_list(point))
+                coord = self.project2(point=output)
                 if (0 <= coord[0] <= self.camera_params.width
                     and
                     0 <= coord[1] <= self.camera_params.height):
@@ -241,6 +244,14 @@ class Node:
             point.h - self.transform.transform.translation.z,
         ]
         return output
+    
+    def point_to_list(self, point):
+        """"""
+        return [
+            point.ly,
+            point.bx,
+            point.h,
+        ]
 
     def project(self, point):
         """
@@ -271,8 +282,66 @@ class Node:
         # xs = cv2.undistortPoints(X_, self.camera_params.K, self.camera_params.D)
         # pixel coordinates
         q = np.matmul(K, X_).flatten()
-        print(q)
+        # print(q)
         return q
+    
+    def project2(self, point):
+        """"""
+        # create rotation transformation matrix
+        xyz = self.euler_from_quaternion(self.transform.transform.rotation)
+        angles = list(xyz)
+        order = 'xyz'
+        R = create_rotation_transformation_matrix(angles, order)
+        R_ = np.identity(4)
+        R_[:3, :3] = R
+
+        # create translation transformation matrix
+        offset = np.array([
+            self.transform.transform.translation.x,
+            self.transform.transform.translation.y,
+            self.transform.transform.translation.z
+        ])
+        offset = np.array([0, 0, 0])
+        T_ = create_translation_matrix(offset)
+
+        E = np.linalg.inv(np.matmul(R_, T_))
+
+        # remove last row of E
+        E = E[:-1, :]
+        point.append(1)
+        cw = np.array(point).reshape(4, 1)
+        # cc is coordinates of point in camera coordinates
+        cc = np.matmul(E, cw)
+        # print(cc.flatten())
+        # to get coordinates of point in the image
+        K = np.array(self.camera_params.K).reshape(3, 3)
+        p = np.matmul(K, cc).flatten()
+        # print(p)
+        return p
+
+    @staticmethod
+    def euler_from_quaternion(quaternion):
+        """
+        Converts quaternion ([x, y, z, w]) to euler roll, pitch, yaw
+        Should be replaced when porting for ROS 2 Python tf_conversions is done.
+        """
+        x = quaternion.x
+        y = quaternion.y
+        z = quaternion.z
+        w = quaternion.w
+
+        sin_r_cos_p = 2 * (w * x + y * z)
+        cos_r_cos_p = 1 - 2 * (x * x + y * y)
+        roll = np.arctan2(sin_r_cos_p, cos_r_cos_p)
+
+        sin_p = 2 * (w * y - z * x)
+        pitch = np.arcsin(sin_p)
+
+        sin_y_cos_p = 2 * (w * z + x * y)
+        cos_y_cos_p = 1 - 2 * (y * y + z * z)
+        yaw = np.arctan2(sin_y_cos_p, cos_y_cos_p)
+
+        return roll, pitch, yaw
 
 
 

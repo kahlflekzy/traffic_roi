@@ -1,6 +1,9 @@
 # Traffic ROI
 ## Introduction
-Requires `numpy` to be installed, code might also require `tf2` installed
+Requires `numpy`,  to be installed, code might also require `tf2` installed
+```
+pip install pytransform3d
+```
 ```
 cd /root/ROS/
 ```
@@ -46,6 +49,7 @@ docker cp config.rviz uav_lander:/root/ROS/workspace/src/traffic_roi/data/
 ```
 
 ## Running
+Put `config.rviz`, `platform.urdf` and `traffic_lights.bag` in the `data` folder.
 
 ```
 . devel/setup.bash 
@@ -74,3 +78,4 @@ To solve this problem, the steps involved includes:
 3. [Rospy Param](http://wiki.ros.org/rospy/Overview/Parameter%20Server)
 4. [Adding local Repo to GitHub](https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github)
 5. [Visualization](http://wiki.ros.org/rviz/Tutorials/Markers%3A%20Basic%20Shapes)
+6. [Camera Calibration Tutorial](https://towardsdatascience.com/image-formation-and-pinhole-model-of-the-camera-53872ee4ee92)
