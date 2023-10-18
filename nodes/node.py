@@ -201,6 +201,8 @@ class Node:
                 self.marker_pub.publish(self.marker)
             try:
                 cv_image = self.bridge.imgmsg_to_cv2(self.current_image, desired_encoding='passthrough')
+                # hardcoded points, 
+                # ideally this points will be generated based on coord above for each yellow signal
                 start_point = (5, 5)
                 end_point = (420, 420)
                 color = (0, 255, 0)
