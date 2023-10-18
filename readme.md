@@ -1,9 +1,7 @@
 # Traffic ROI
 ## Introduction
 Requires `numpy`,  to be installed, code might also require `tf2` installed
-```
-pip install pytransform3d
-```
+
 ```
 cd /root/ROS/
 ```
