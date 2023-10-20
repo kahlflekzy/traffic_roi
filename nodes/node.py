@@ -303,7 +303,6 @@ class Node:
             self.transform.transform.translation.y,
             self.transform.transform.translation.z
         ])
-        offset = np.array([0, 0, 0])
         T_ = create_translation_matrix(offset)
 
         E = np.linalg.inv(np.matmul(R_, T_))
@@ -325,7 +324,8 @@ class Node:
     def euler_from_quaternion(quaternion):
         """
         Converts quaternion ([x, y, z, w]) to euler roll, pitch, yaw
-        Should be replaced when porting for ROS 2 Python tf_conversions is done.
+        import tf_convsersions
+        xyz = tf_conversions.transformations.euler_from_quaternion([x, y, z, w])
         """
         x = quaternion.x
         y = quaternion.y
@@ -345,7 +345,39 @@ class Node:
 
         return roll, pitch, yaw
 
+    def project3(self, point):
+        """
+        1. Create Camera Extrinsic Matrix
+            i. Get orientation and position of camera wrt to world.
+        """
+        xyz = self.euler_from_quaternion(self.transform.transform.rotation)
+        angles = list(xyz)
+        angles = [0, 0, 0] # no rotation
+        order = 'xyz'
 
+        R = create_rotation_transformation_matrix(angles, order)
+        R_ = np.identity(4)
+        R_[:3, :3] = R
+
+        # create translation transformation matrix
+        offset = np.array([5, 5, 1])
+        T_ = create_translation_matrix(offset)
+
+        E = np.linalg.inv(np.matmul(R_, T_))
+
+        # remove last row of E
+        E = E[:-1, :]
+        point.append(1)
+        point = [6, 6, 1, 1]
+        cw = np.array(point).reshape(4, 1)
+        # cc is coordinates of point in camera coordinates
+        cc = np.matmul(E, cw)
+        # print(cc.flatten())
+        # to get coordinates of point in the image
+        K = np.array(self.camera_params.K).reshape(3, 3)
+        p = np.matmul(K, cc).flatten()
+        print(cc)
+        return p
 
 if __name__ == "__main__":
     rospy.init_node("roi_node")
