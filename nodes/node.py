@@ -187,12 +187,10 @@ class Node:
             self.lights = len(lights)
             for index, point in enumerate(lights):
                 self.marker.id = index
-                output = self.transform_point(point)
+                output = self.point_to_list(point)
                 self.marker.pose.position.x = point.ly;
                 self.marker.pose.position.y = point.bx;
-                # coord = self.project(point=output)
-                # coord = self.project2(point=self.point_to_list(point))
-                coord = self.project2(point=output)
+                coord = self.project(point=output)
                 if (0 <= coord[0] <= self.camera_params.width
                     and
                     0 <= coord[1] <= self.camera_params.height):
@@ -254,40 +252,8 @@ class Node:
             point.bx,
             point.h,
         ]
-
-    def project(self, point):
-        """
-        Get pixel coordinates of point by transforming and then getting coordinates.
-        """
-        T0 = np.array([
-            [1, 0, 0, point[0]],
-            [0, 1, 0, point[1]],
-            [0, 0, 1, point[2]],
-            [0, 0, 0, 1]
-            ])
-        T1 = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-            ])
-        T2 = np.array(self.camera_params.R).reshape(3, 3)
-        X = np.array(point).reshape(3, 1)
-        # transform
-        X_ = np.matmul(T2, X)
-        # normalize
-        X_[0] /= X_[2]
-        X_[1] /= X_[2]
-        X_.reshape(1, 3)
-        # undistort
-        K = np.array(self.camera_params.K).reshape(3, 3)
-        # xs = cv2.undistortPoints(X_, self.camera_params.K, self.camera_params.D)
-        # pixel coordinates
-        q = np.matmul(K, X_).flatten()
-        # print(q)
-        return q
     
-    def project2(self, point):
+    def project(self, point):
         """"""
         # create rotation transformation matrix
         xyz = self.euler_from_quaternion(self.transform.transform.rotation)
@@ -344,40 +310,6 @@ class Node:
         yaw = np.arctan2(sin_y_cos_p, cos_y_cos_p)
 
         return roll, pitch, yaw
-
-    def project3(self, point):
-        """
-        1. Create Camera Extrinsic Matrix
-            i. Get orientation and position of camera wrt to world.
-        """
-        xyz = self.euler_from_quaternion(self.transform.transform.rotation)
-        angles = list(xyz)
-        angles = [0, 0, 0] # no rotation
-        order = 'xyz'
-
-        R = create_rotation_transformation_matrix(angles, order)
-        R_ = np.identity(4)
-        R_[:3, :3] = R
-
-        # create translation transformation matrix
-        offset = np.array([5, 5, 1])
-        T_ = create_translation_matrix(offset)
-
-        E = np.linalg.inv(np.matmul(R_, T_))
-
-        # remove last row of E
-        E = E[:-1, :]
-        point.append(1)
-        point = [6, 6, 1, 1]
-        cw = np.array(point).reshape(4, 1)
-        # cc is coordinates of point in camera coordinates
-        cc = np.matmul(E, cw)
-        # print(cc.flatten())
-        # to get coordinates of point in the image
-        K = np.array(self.camera_params.K).reshape(3, 3)
-        p = np.matmul(K, cc).flatten()
-        print(cc)
-        return p
 
 if __name__ == "__main__":
     rospy.init_node("roi_node")
